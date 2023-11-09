@@ -1,0 +1,14 @@
+name = "sidan-lab/aiken-content-ownership"
+version = "0.0.0"
+license = "Apache-2.0"
+description = "Aiken contracts for project 'sidan-lab/aiken-content-ownership'"
+
+[repository]
+user = "sidan-lab"
+project = "aiken-content-ownership"
+platform = "github"
+
+[[dependencies]]
+name = "aiken-lang/stdlib"
+version = "1.7.0"
+source = "github"
