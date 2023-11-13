@@ -12,3 +12,14 @@ platform = "github"
 name = "aiken-lang/stdlib"
 version = "1.7.0"
 source = "github"
+
+[[language]]
+name = "aiken"
+scope = "source.aiken"
+injection-regex = "aiken"
+file-types = ["ak"]
+roots = ["aiken.toml"]
+auto-format = true
+comment-token = "//"
+language-server = { command = "aiken", args = ["lsp"] }
+indent = { tab-width = 2, unit = "  " }

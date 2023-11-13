@@ -1,0 +1,56 @@
+{
+  "preamble": {
+    "title": "sidan-lab/aiken-content-ownership",
+    "description": "Aiken contracts for project 'sidan-lab/aiken-content-ownership'",
+    "version": "0.0.0",
+    "plutusVersion": "v2",
+    "compiler": {
+      "name": "Aiken",
+      "version": "v1.0.20-alpha+49bd4ba"
+    },
+    "license": "Apache-2.0"
+  },
+  "validators": [
+    {
+      "title": "one_time_minting_policy.one_time_minting_policy",
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/one_time_minting_policy~1Redeemer"
+        }
+      },
+      "parameters": [
+        {
+          "title": "utxo_ref",
+          "schema": {
+            "$ref": "#/definitions/ByteArray"
+          }
+        }
+      ],
+      "compiledCode": "58ff010000323232323232323232232223253330083232323232533300d3370e9000000899299980719b87480000044c8c8c8c94ccc048cdc3a400000229445281808000991980080080111299980a8008a60103d87a80001323253330143371e0206eb8c8c004c04cc004c04cc004c04c00c8c0680044cdd2a40006603000497ae01330040040013019002301700137586028002601800a2944c030020528180580098080009808001180700098030010a4c26cac64a66601066e1d20000011533300b300600314985854ccc020cdc3a40040022a666016600c0062930b0b18030011bae001230053754002460066ea80055cd2ab9d5573caae7d5d02ba157441",
+      "hash": "b457d64c34c592b7722c0c72a742246d750dca684a41e918b159a03a"
+    }
+  ],
+  "definitions": {
+    "ByteArray": {
+      "dataType": "bytes"
+    },
+    "one_time_minting_policy/Redeemer": {
+      "title": "Redeemer",
+      "anyOf": [
+        {
+          "title": "RMint",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "RBurn",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": []
+        }
+      ]
+    }
+  }
+}
