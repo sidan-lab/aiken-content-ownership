@@ -1,5 +1,6 @@
 use aiken/transaction.{NoDatum, Output, OutputReference, TransactionId}
-use aiken/transaction/credential.{Address, VerificationKeyCredential}
+use aiken/transaction/credential.{Address,
+  Credential, VerificationKeyCredential}
 use aiken/transaction/value.{PolicyId, from_lovelace}
 
 pub fn mock_policy_id() -> PolicyId {
@@ -29,4 +30,10 @@ pub fn mock_output() -> Output {
     datum: NoDatum,
     reference_script: None,
   }
+}
+
+pub fn mock_verfication_key_credential() -> Credential {
+  VerificationKeyCredential(
+    #"e822178d3ceaeef383a84cbd41a702b3837360bf889aaac714e6f380731d20d4",
+  )
 }
