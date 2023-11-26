@@ -1,18 +1,25 @@
-use aiken/transaction.{InlineDatum, ScriptContext, Spend, Transaction}
+use aiken/transaction.{
+  InlineDatum, Input, Output, ScriptContext, Spend, Transaction, placeholder,
+}
 use aiken/transaction/credential.{Address}
-use aiken/transaction/value.{PolicyId}
+use aiken/transaction/value.{PolicyId, from_asset, to_minted_value}
 use aiken_content_ownership/common.{
   all_key_signed, key_signed, onlyMintedToken, utxos_at_with,
+}
+use aiken_content_ownership/placeholder.{
+  mock_policy_id, mock_policy_id_2, mock_policy_id_3, mock_script_address,
+  mock_script_address_2, mock_script_address_3, mock_utxo_ref, mock_vkey_hex,
+  mock_vkey_hex_2,
 }
 use aiken_content_ownership/utils.{get_registry_token_name}
 
 type Datum {
   oracle_nft: PolicyId,
   oracle_address: Address,
-  content_registry_address: Address,
   content_registry_ref_token: PolicyId,
-  ownership_registry_address: Address,
+  content_registry_address: Address,
   ownership_registry_ref_token: PolicyId,
+  ownership_registry_address: Address,
   content_registry_count: Int,
   ownership_registry_count: Int,
   operation_key: ByteArray,
@@ -92,4 +99,104 @@ validator {
       _ -> False
     }
   }
+}
+
+fn mock_datum() {
+  Datum {
+    oracle_nft: mock_policy_id(),
+    oracle_address: mock_script_address(None),
+    content_registry_ref_token: mock_policy_id_2(),
+    content_registry_address: mock_script_address_2(None),
+    ownership_registry_ref_token: mock_policy_id_3(),
+    ownership_registry_address: mock_script_address_3(None),
+    content_registry_count: 0,
+    ownership_registry_count: 0,
+    operation_key: mock_vkey_hex(),
+    stop_key: mock_vkey_hex_2(),
+  }
+}
+
+test success_create_content_registry() {
+  let redeemer = CreateContentRegistry
+  let policy_id: PolicyId = mock_policy_id_2()
+
+  let tx =
+    Transaction {
+      ..placeholder(),
+      mint: to_minted_value(from_asset(policy_id, "Registry (0)", 1)),
+    }
+  let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(0)), transaction: tx }
+
+  oracle_validator(mock_datum(), redeemer, ctx)
+}
+
+test success_create_ownership_registry() {
+  let redeemer = CreateOwnershipRegistry
+  let policy_id: PolicyId = mock_policy_id_3()
+
+  let tx =
+    Transaction {
+      ..placeholder(),
+      mint: to_minted_value(from_asset(policy_id, "Registry (0)", 1)),
+    }
+  let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(0)), transaction: tx }
+
+  oracle_validator(mock_datum(), redeemer, ctx)
+}
+
+test success_rotate_key() {
+  let redeemer =
+    RotateKey {
+      new_operation_key: mock_vkey_hex_2(),
+      new_stop_key: mock_vkey_hex(),
+    }
+
+  let input_utxo = mock_utxo_ref(0)
+  let input =
+    Input {
+      output_reference: input_utxo,
+      output: Output {
+        address: mock_script_address(None),
+        value: from_asset(mock_policy_id(), "", 1),
+        datum: InlineDatum(mock_datum()),
+        reference_script: None,
+      },
+    }
+  let output =
+    Output {
+      address: mock_script_address(None),
+      value: from_asset(mock_policy_id(), "", 1),
+      datum: InlineDatum(
+        Datum {
+          ..mock_datum(),
+          operation_key: mock_vkey_hex_2(),
+          stop_key: mock_vkey_hex(),
+        },
+      ),
+      reference_script: None,
+    }
+
+  let tx =
+    Transaction {
+      ..placeholder(),
+      inputs: [input],
+      outputs: [output],
+      extra_signatories: [mock_vkey_hex(), mock_vkey_hex_2()],
+    }
+  let ctx = ScriptContext { purpose: Spend(input_utxo), transaction: tx }
+
+  oracle_validator(mock_datum(), redeemer, ctx)
+}
+
+test success_stop_app() {
+  let redeemer = StopApp
+  let tx =
+    Transaction {
+      ..placeholder(),
+      mint: to_minted_value(from_asset(mock_policy_id(), "", -1)),
+      extra_signatories: [mock_vkey_hex_2()],
+    }
+  let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(0)), transaction: tx }
+
+  oracle_validator(mock_datum(), redeemer, ctx)
 }
