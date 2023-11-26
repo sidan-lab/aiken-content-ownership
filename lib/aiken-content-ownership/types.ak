@@ -32,7 +32,21 @@ pub type ContentRegistryDatum {
   registry: Dict<Int, ByteArray>,
 }
 
+pub type ContentRegistryRedeemer {
+  CreateContent { content_hash: ByteArray }
+  StopContentRegistry
+}
+
 pub type OwnershipRegistryDatum {
   count: Int,
   registry: Dict<Int, (PolicyId, AssetName)>,
+}
+
+pub type OwnershipRegistryRedeemer {
+  CreateOwnershipRecord { owner_token: (PolicyId, AssetName) }
+  TransferOwnership {
+    new_owner_toen: (PolicyId, AssetName),
+    content_number: Int,
+  }
+  StopOwnershipRegistry
 }

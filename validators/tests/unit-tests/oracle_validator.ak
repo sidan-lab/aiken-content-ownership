@@ -5,20 +5,10 @@ use aiken_content_ownership/placeholder.{
   mock_policy_id_3, mock_utxo_ref, mock_vkey_hex, mock_vkey_hex_2,
 }
 use aiken_content_ownership/types.{
-  CreateContentRegistry, CreateOwnershipRegistry, OracleDatum, OracleRedeemer,
-  RotateKey, StopApp,
+  CreateContentRegistry, CreateOwnershipRegistry, OracleDatum, RotateKey,
+  StopApp,
 }
 use aiken_content_ownership/validators/oracle_validator.{oracle_validator_logic}
-
-validator {
-  fn oracle_validator(
-    datum: OracleDatum,
-    redeemer: OracleRedeemer,
-    context: ScriptContext,
-  ) {
-    oracle_validator_logic(datum, redeemer, context)
-  }
-}
 
 test success_create_content_registry() {
   let redeemer = CreateContentRegistry
@@ -31,7 +21,7 @@ test success_create_content_registry() {
     }
   let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(0)), transaction: tx }
 
-  oracle_validator(mock_oracle_datum(), redeemer, ctx)
+  oracle_validator_logic(mock_oracle_datum(), redeemer, ctx)
 }
 
 test success_create_ownership_registry() {
@@ -45,7 +35,7 @@ test success_create_ownership_registry() {
     }
   let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(0)), transaction: tx }
 
-  oracle_validator(mock_oracle_datum(), redeemer, ctx)
+  oracle_validator_logic(mock_oracle_datum(), redeemer, ctx)
 }
 
 test success_rotate_key() {
@@ -79,7 +69,7 @@ test success_rotate_key() {
     }
   let ctx = ScriptContext { purpose: Spend(input_utxo), transaction: tx }
 
-  oracle_validator(mock_oracle_datum(), redeemer, ctx)
+  oracle_validator_logic(mock_oracle_datum(), redeemer, ctx)
 }
 
 test success_stop_app() {
@@ -92,5 +82,5 @@ test success_stop_app() {
     }
   let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(0)), transaction: tx }
 
-  oracle_validator(mock_oracle_datum(), redeemer, ctx)
+  oracle_validator_logic(mock_oracle_datum(), redeemer, ctx)
 }
