@@ -8,14 +8,13 @@ use aiken/transaction/value.{
 use aiken_content_ownership/placeholder.{
   mock_output, mock_policy_id, mock_policy_id_2, mock_utxo_ref,
 }
-
-type Redeemer {
-  RMint
-  RBurn
-}
+use aiken_content_ownership/types.{MintPolarity, RBurn, RMint}
 
 validator(utxo_ref: OutputReference) {
-  fn one_time_minting_policy(redeemer: Redeemer, context: ScriptContext) -> Bool {
+  fn one_time_minting_policy(
+    redeemer: MintPolarity,
+    context: ScriptContext,
+  ) -> Bool {
     let ScriptContext { purpose, transaction } = context
     when purpose is {
       Mint(current_policy) ->

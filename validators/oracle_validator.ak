@@ -1,45 +1,31 @@
 use aiken/transaction.{
   InlineDatum, Input, Output, ScriptContext, Spend, Transaction, placeholder,
 }
-use aiken/transaction/credential.{Address}
 use aiken/transaction/value.{PolicyId, from_asset, to_minted_value}
 use aiken_content_ownership/common.{
-  all_key_signed, key_signed, onlyMintedToken, utxos_at_with,
+  all_key_signed, key_signed, onlyMintedToken, outputs_at_with,
 }
 use aiken_content_ownership/placeholder.{
-  mock_policy_id, mock_policy_id_2, mock_policy_id_3, mock_script_address,
-  mock_script_address_2, mock_script_address_3, mock_utxo_ref, mock_vkey_hex,
-  mock_vkey_hex_2,
+  mock_oracle_datum, mock_oracle_output, mock_policy_id, mock_policy_id_2,
+  mock_policy_id_3, mock_utxo_ref, mock_vkey_hex, mock_vkey_hex_2,
+}
+use aiken_content_ownership/types.{
+  CreateContentRegistry, CreateOwnershipRegistry, OracleDatum, OracleRedeemer,
+  RotateKey, StopApp,
 }
 use aiken_content_ownership/utils.{get_registry_token_name}
 
-type Datum {
-  oracle_nft: PolicyId,
-  oracle_address: Address,
-  content_registry_ref_token: PolicyId,
-  content_registry_address: Address,
-  ownership_registry_ref_token: PolicyId,
-  ownership_registry_address: Address,
-  content_registry_count: Int,
-  ownership_registry_count: Int,
-  operation_key: ByteArray,
-  stop_key: ByteArray,
-}
-
-type Redeemer {
-  CreateContentRegistry
-  CreateOwnershipRegistry
-  RotateKey { new_operation_key: ByteArray, new_stop_key: ByteArray }
-  StopApp
-}
-
 validator {
-  fn oracle_validator(datum: Datum, redeemer: Redeemer, context: ScriptContext) {
+  fn oracle_validator(
+    datum: OracleDatum,
+    redeemer: OracleRedeemer,
+    context: ScriptContext,
+  ) {
     let ScriptContext { purpose, transaction } = context
     when purpose is {
       Spend(_) -> {
         let Transaction { outputs, mint, extra_signatories, .. } = transaction
-        let Datum {
+        let OracleDatum {
           oracle_nft,
           oracle_address,
           content_registry_ref_token,
@@ -72,11 +58,11 @@ validator {
           RotateKey { new_operation_key, new_stop_key } -> {
             // Sign by both ops and stop key
             expect [own_output] =
-              utxos_at_with(outputs, oracle_address, oracle_nft, "")
+              outputs_at_with(outputs, oracle_address, oracle_nft, "")
             expect InlineDatum(dat) = own_output.datum
-            expect own_datum: Datum = dat
+            expect own_datum: OracleDatum = dat
             let datum_correct =
-              own_datum == Datum {
+              own_datum == OracleDatum {
                 ..datum,
                 operation_key: new_operation_key,
                 stop_key: new_stop_key,
@@ -101,21 +87,6 @@ validator {
   }
 }
 
-fn mock_datum() {
-  Datum {
-    oracle_nft: mock_policy_id(),
-    oracle_address: mock_script_address(None),
-    content_registry_ref_token: mock_policy_id_2(),
-    content_registry_address: mock_script_address_2(None),
-    ownership_registry_ref_token: mock_policy_id_3(),
-    ownership_registry_address: mock_script_address_3(None),
-    content_registry_count: 0,
-    ownership_registry_count: 0,
-    operation_key: mock_vkey_hex(),
-    stop_key: mock_vkey_hex_2(),
-  }
-}
-
 test success_create_content_registry() {
   let redeemer = CreateContentRegistry
   let policy_id: PolicyId = mock_policy_id_2()
@@ -127,7 +98,7 @@ test success_create_content_registry() {
     }
   let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(0)), transaction: tx }
 
-  oracle_validator(mock_datum(), redeemer, ctx)
+  oracle_validator(mock_oracle_datum(), redeemer, ctx)
 }
 
 test success_create_ownership_registry() {
@@ -141,7 +112,7 @@ test success_create_ownership_registry() {
     }
   let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(0)), transaction: tx }
 
-  oracle_validator(mock_datum(), redeemer, ctx)
+  oracle_validator(mock_oracle_datum(), redeemer, ctx)
 }
 
 test success_rotate_key() {
@@ -155,26 +126,16 @@ test success_rotate_key() {
   let input =
     Input {
       output_reference: input_utxo,
-      output: Output {
-        address: mock_script_address(None),
-        value: from_asset(mock_policy_id(), "", 1),
-        datum: InlineDatum(mock_datum()),
-        reference_script: None,
-      },
+      output: mock_oracle_output(mock_oracle_datum()),
     }
   let output =
-    Output {
-      address: mock_script_address(None),
-      value: from_asset(mock_policy_id(), "", 1),
-      datum: InlineDatum(
-        Datum {
-          ..mock_datum(),
-          operation_key: mock_vkey_hex_2(),
-          stop_key: mock_vkey_hex(),
-        },
-      ),
-      reference_script: None,
-    }
+    mock_oracle_output(
+      OracleDatum {
+        ..mock_oracle_datum(),
+        operation_key: mock_vkey_hex_2(),
+        stop_key: mock_vkey_hex(),
+      },
+    )
 
   let tx =
     Transaction {
@@ -185,7 +146,7 @@ test success_rotate_key() {
     }
   let ctx = ScriptContext { purpose: Spend(input_utxo), transaction: tx }
 
-  oracle_validator(mock_datum(), redeemer, ctx)
+  oracle_validator(mock_oracle_datum(), redeemer, ctx)
 }
 
 test success_stop_app() {
@@ -198,5 +159,5 @@ test success_stop_app() {
     }
   let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(0)), transaction: tx }
 
-  oracle_validator(mock_datum(), redeemer, ctx)
+  oracle_validator(mock_oracle_datum(), redeemer, ctx)
 }

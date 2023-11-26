@@ -1,8 +1,13 @@
-use aiken/transaction.{NoDatum, Output, OutputReference, TransactionId}
+use aiken/dict.{Dict}
+use aiken/transaction.{
+  InlineDatum, NoDatum, Output, OutputReference, TransactionId,
+}
 use aiken/transaction/credential.{
   Address, Credential, ScriptCredential, VerificationKeyCredential,
 }
-use aiken/transaction/value.{PolicyId, from_lovelace}
+use aiken/transaction/value.{PolicyId, add, from_asset, from_lovelace}
+use aiken_content_ownership/types.{ContentRegistryDatum, OracleDatum}
+use aiken_content_ownership/utils.{get_registry_token_name}
 
 pub fn mock_policy_id() -> PolicyId {
   #"1c1b7afe8affbee1505cf3ec5a58bd2734d4ffdfcc9b9f059625bd76"
@@ -113,5 +118,54 @@ pub fn mock_script_address_3(stake_credential) -> Address {
   Address {
     payment_credential: ScriptCredential(mock_script_hex_3()),
     stake_credential,
+  }
+}
+
+// Smart contract specific placeholders
+pub fn mock_oracle_datum() {
+  OracleDatum {
+    oracle_nft: mock_policy_id(),
+    oracle_address: mock_script_address(None),
+    content_registry_ref_token: mock_policy_id_2(),
+    content_registry_address: mock_script_address_2(None),
+    ownership_registry_ref_token: mock_policy_id_3(),
+    ownership_registry_address: mock_script_address_3(None),
+    content_registry_count: 0,
+    ownership_registry_count: 0,
+    operation_key: mock_vkey_hex(),
+    stop_key: mock_vkey_hex_2(),
+  }
+}
+
+pub fn mock_oracle_output(oracle_datum: OracleDatum) -> Output {
+  Output {
+    address: mock_script_address(None),
+    value: from_asset(mock_policy_id(), "", 1) |> add(#"", #"", 2_000_000),
+    datum: InlineDatum(oracle_datum),
+    reference_script: None,
+  }
+}
+
+pub fn mock_content_registry_datum(
+  count: Int,
+  registry: Dict<Int, ByteArray>,
+) -> ContentRegistryDatum {
+  ContentRegistryDatum { count, registry }
+}
+
+pub fn mock_content_registry_output(
+  registry_count: Int,
+  registry_datum: ContentRegistryDatum,
+) -> Output {
+  Output {
+    address: mock_script_address_2(None),
+    value: from_asset(
+      mock_policy_id_2(),
+      get_registry_token_name(registry_count),
+      1,
+    )
+      |> add(#"", #"", 2_000_000),
+    datum: InlineDatum(registry_datum),
+    reference_script: None,
   }
 }
