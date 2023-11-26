@@ -4,7 +4,9 @@ use aiken/transaction.{
   InlineDatum, Input, Mint, Output, ScriptContext, Transaction, placeholder,
 }
 use aiken/transaction/value.{PolicyId, add, from_asset, to_minted_value}
-use aiken_content_ownership/common.{inputs_with, outputs_at_with, value_length}
+use aiken_content_ownership/common.{
+  check_policy_only_burn, inputs_with, outputs_at_with, value_length,
+}
 use aiken_content_ownership/placeholder.{
   mock_content_registry_datum, mock_content_registry_output, mock_oracle_datum,
   mock_oracle_output, mock_policy_id, mock_policy_id_2, mock_policy_id_3,
@@ -21,9 +23,9 @@ validator(oracle_nft: PolicyId) {
     context: ScriptContext,
   ) -> Bool {
     let ScriptContext { purpose, transaction } = context
-    let Transaction { inputs, outputs, .. } = transaction
+    let Transaction { inputs, outputs, mint, .. } = transaction
     when purpose is {
-      Mint(_) ->
+      Mint(current_policy) ->
         when (redeemer, inputs_with(inputs, oracle_nft, "")) is {
           (RMint, [oracle_input]) -> {
             expect InlineDatum(inline_datum) = oracle_input.output.datum
@@ -68,7 +70,7 @@ validator(oracle_nft: PolicyId) {
               _ -> False
             }
           }
-          (RBurn, _) -> True
+          (RBurn, _) -> check_policy_only_burn(mint, current_policy)
           _ -> False
         }
       _ -> False

@@ -3,7 +3,7 @@ use aiken/transaction.{
 }
 use aiken/transaction/value.{PolicyId, from_asset, to_minted_value}
 use aiken_content_ownership/common.{
-  all_key_signed, key_signed, onlyMintedToken, outputs_at_with,
+  all_key_signed, key_signed, only_minted_token, outputs_at_with,
 }
 use aiken_content_ownership/placeholder.{
   mock_oracle_datum, mock_oracle_output, mock_policy_id, mock_policy_id_2,
@@ -40,7 +40,7 @@ validator {
         when redeemer is {
           CreateContentRegistry ->
             // Ref token is minted
-            onlyMintedToken(
+            only_minted_token(
               mint,
               content_registry_ref_token,
               get_registry_token_name(content_registry_count),
@@ -49,7 +49,7 @@ validator {
 
           CreateOwnershipRegistry ->
             // Ref token is minted
-            onlyMintedToken(
+            only_minted_token(
               mint,
               ownership_registry_ref_token,
               get_registry_token_name(ownership_registry_count),
@@ -74,7 +74,7 @@ validator {
           StopApp ->
             // signed by stop key
             // oracle nft is burned
-            key_signed(extra_signatories, stop_key) && onlyMintedToken(
+            key_signed(extra_signatories, stop_key) && only_minted_token(
               mint,
               oracle_nft,
               "",

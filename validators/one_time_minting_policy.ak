@@ -2,9 +2,8 @@ use aiken/list
 use aiken/transaction.{
   Input, Mint, OutputReference, ScriptContext, Transaction, placeholder,
 }
-use aiken/transaction/value.{
-  PolicyId, add, flatten, from_asset, from_minted_value, to_minted_value,
-}
+use aiken/transaction/value.{PolicyId, add, from_asset, to_minted_value}
+use aiken_content_ownership/common.{check_policy_only_burn}
 use aiken_content_ownership/placeholder.{
   mock_output, mock_policy_id, mock_policy_id_2, mock_utxo_ref,
 }
@@ -32,19 +31,7 @@ validator(utxo_ref: OutputReference) {
               None -> False
             }
           }
-          RBurn -> {
-            let burn_value = flatten(from_minted_value(transaction.mint))
-            list.all(
-              burn_value,
-              fn(x) {
-                if x.1st == current_policy {
-                  x.3rd < 0
-                } else {
-                  True
-                }
-              },
-            )
-          }
+          RBurn -> check_policy_only_burn(transaction.mint, current_policy)
         }
       _ -> False
     }

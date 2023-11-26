@@ -65,7 +65,21 @@ pub fn outputs_at_with(
   )
 }
 
-pub fn onlyMintedToken(
+pub fn check_policy_only_burn(mint: MintedValue, policy: PolicyId) -> Bool {
+  let burn_value = flatten(from_minted_value(mint))
+  list.all(
+    burn_value,
+    fn(x) {
+      if x.1st == policy {
+        x.3rd < 0
+      } else {
+        True
+      }
+    },
+  )
+}
+
+pub fn only_minted_token(
   mint: MintedValue,
   policy: PolicyId,
   name: AssetName,

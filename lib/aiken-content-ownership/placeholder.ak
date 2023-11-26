@@ -6,7 +6,9 @@ use aiken/transaction/credential.{
   Address, Credential, ScriptCredential, VerificationKeyCredential,
 }
 use aiken/transaction/value.{PolicyId, add, from_asset, from_lovelace}
-use aiken_content_ownership/types.{ContentRegistryDatum, OracleDatum}
+use aiken_content_ownership/types.{
+  ContentRegistryDatum, OracleDatum, OwnershipRegistryDatum,
+}
 use aiken_content_ownership/utils.{get_registry_token_name}
 
 pub fn mock_policy_id() -> PolicyId {
@@ -161,6 +163,30 @@ pub fn mock_content_registry_output(
     address: mock_script_address_2(None),
     value: from_asset(
       mock_policy_id_2(),
+      get_registry_token_name(registry_count),
+      1,
+    )
+      |> add(#"", #"", 2_000_000),
+    datum: InlineDatum(registry_datum),
+    reference_script: None,
+  }
+}
+
+pub fn mock_ownership_registry_datum(
+  count: Int,
+  registry: Dict<Int, (ByteArray, ByteArray)>,
+) -> OwnershipRegistryDatum {
+  OwnershipRegistryDatum { count, registry }
+}
+
+pub fn mock_ownership_registry_output(
+  registry_count: Int,
+  registry_datum: OwnershipRegistryDatum,
+) -> Output {
+  Output {
+    address: mock_script_address_3(None),
+    value: from_asset(
+      mock_policy_id_3(),
       get_registry_token_name(registry_count),
       1,
     )
