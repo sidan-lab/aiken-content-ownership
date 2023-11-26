@@ -33,7 +33,7 @@ pub type ContentRegistryDatum {
 }
 
 pub type ContentRegistryRedeemer {
-  CreateContent { content_hash: ByteArray }
+  CreateContent { content_hash: ByteArray, owner: (PolicyId, AssetName) }
   StopContentRegistry
 }
 
@@ -43,7 +43,7 @@ pub type OwnershipRegistryDatum {
 }
 
 pub type OwnershipRegistryRedeemer {
-  CreateOwnershipRecord { owner_token: (PolicyId, AssetName) }
+  CreateOwnershipRecord
   TransferOwnership {
     new_owner_toen: (PolicyId, AssetName),
     content_number: Int,

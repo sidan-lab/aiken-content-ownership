@@ -40,6 +40,22 @@ pub fn inputs_at_with(
   )
 }
 
+pub fn inputs_at_with_policy(
+  inputs: List<Input>,
+  address: Address,
+  policy: PolicyId,
+) -> List<Input> {
+  list.filter(
+    inputs,
+    fn(input) {
+      input.output.address == address && list.any(
+        flatten(input.output.value),
+        fn(token) { token.1st == policy },
+      )
+    },
+  )
+}
+
 pub fn outputs_at(outputs: List<Output>, address: Address) -> List<Output> {
   list.filter(outputs, fn(output) { output.address == address })
 }
@@ -61,6 +77,22 @@ pub fn outputs_at_with(
     outputs,
     fn(output) {
       output.address == address && quantity_of(output.value, policy, name) == 1
+    },
+  )
+}
+
+pub fn outputs_at_with_policy(
+  outputs: List<Output>,
+  address: Address,
+  policy: PolicyId,
+) -> List<Output> {
+  list.filter(
+    outputs,
+    fn(output) {
+      output.address == address && list.any(
+        flatten(output.value),
+        fn(token) { token.1st == policy },
+      )
     },
   )
 }

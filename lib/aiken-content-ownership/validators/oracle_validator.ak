@@ -3,12 +3,16 @@ use aiken_content_ownership/common.{
   all_key_signed, key_signed, only_minted_token, outputs_at_with,
 }
 use aiken_content_ownership/types.{
-  CreateContentRegistry, CreateOwnershipRegistry, OracleDatum, RotateKey,
-  StopApp,
+  CreateContentRegistry, CreateOwnershipRegistry, OracleDatum, OracleRedeemer,
+  RotateKey, StopApp,
 }
 use aiken_content_ownership/utils.{get_registry_token_name}
 
-pub fn oracle_validator_logic(datum, redeemer, context) {
+pub fn oracle_validator_logic(
+  datum: OracleDatum,
+  redeemer: OracleRedeemer,
+  context: ScriptContext,
+) {
   let ScriptContext { purpose, transaction } = context
   when purpose is {
     Spend(_) -> {
