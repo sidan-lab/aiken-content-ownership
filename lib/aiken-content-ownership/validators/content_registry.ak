@@ -90,7 +90,7 @@ pub fn content_registry_logic(
           let ref_tokens_equal =
             content_ref_token_name == ownership_ref_token_name
           let current_count_equal =
-            content_input_datum.count == content_output_datum.count
+            content_input_datum.count == ownership_input_datum.count
           let content_new_datum_correct =
             content_output_datum == ContentRegistryDatum {
               count: content_input_datum.count + 1,
@@ -111,12 +111,15 @@ pub fn content_registry_logic(
                 int.compare,
               ),
             }
-          ref_tokens_equal && current_count_equal && content_new_datum_correct && ownership_new_datum_correct
+          let content_registry_value_clean =
+            list.length(flatten(content_output.value)) == 2
+          let ownership_registry_value_clean =
+            list.length(flatten(ownership_output.value)) == 2
+          ref_tokens_equal && current_count_equal && content_new_datum_correct && ownership_new_datum_correct && content_registry_value_clean && ownership_registry_value_clean
         }
         _ -> False
       }
     }
-
     _ -> False
   }
 }
