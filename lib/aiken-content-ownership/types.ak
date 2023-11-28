@@ -45,7 +45,7 @@ pub type OwnershipRegistryDatum {
 pub type OwnershipRegistryRedeemer {
   CreateOwnershipRecord
   TransferOwnership {
-    new_owner_toen: (PolicyId, AssetName),
+    new_owner_token: (PolicyId, AssetName),
     content_number: Int,
   }
   StopOwnershipRegistry

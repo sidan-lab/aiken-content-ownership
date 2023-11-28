@@ -170,6 +170,17 @@ pub fn compare_output_reference(x, y) {
   )
 }
 
+pub fn inputs_token_quantity(
+  inputs: List<Input>,
+  token: (PolicyId, AssetName),
+) -> Int {
+  list.map(
+    inputs,
+    fn(input) { quantity_of(input.output.value, token.1st, token.2nd) },
+  )
+    |> list.foldr(0, fn(n, total) { n + total })
+}
+
 test byte_conversion() {
   convert_int_to_bytes(1) == "1" && convert_int_to_bytes(123) == "123" && convert_int_to_bytes(
     672912,

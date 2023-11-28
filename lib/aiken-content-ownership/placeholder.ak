@@ -27,6 +27,10 @@ pub fn mock_policy_id_4() -> PolicyId {
   #"c0f778be07f8b129d2546ad37b0e13b3486747dfe1767ff8e7e8a4f3"
 }
 
+pub fn mock_policy_id_5() -> PolicyId {
+  #"ab4e38cc1e95e42c6f6e56d8d4243731c483bb57e49da5047c38e9d8"
+}
+
 pub fn mock_utxo_ref(output_index: Int) -> OutputReference {
   OutputReference {
     transaction_id: TransactionId(
