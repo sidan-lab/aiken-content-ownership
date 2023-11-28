@@ -4,7 +4,9 @@ use aiken/list
 use aiken/transaction.{
   Input, Output, ScriptContext, Spend, Transaction, placeholder,
 }
-use aiken/transaction/value.{AssetName, PolicyId, add, from_asset}
+use aiken/transaction/value.{
+  AssetName, PolicyId, add, from_asset, negate, to_minted_value, zero,
+}
 use aiken_content_ownership/common.{compare_output_reference}
 use aiken_content_ownership/placeholder.{
   mock_content_registry_output, mock_oracle_datum, mock_oracle_output,
@@ -13,7 +15,8 @@ use aiken_content_ownership/placeholder.{
 }
 use aiken_content_ownership/types.{
   ContentRegistryDatum, CreateContent, CreateOwnershipRecord,
-  OwnershipRegistryDatum, StopContentRegistry, TransferOwnership,
+  OwnershipRegistryDatum, StopContentRegistry, StopOwnershipRegistry,
+  TransferOwnership,
 }
 use aiken_content_ownership/utils.{get_registry_token_name}
 use aiken_content_ownership/validators/ownership_registry.{
@@ -364,5 +367,92 @@ test fail_update_ownership_record_without_clean_registry_value() {
       is_registry_updated: True,
       is_registry_value_clean: False,
     },
+  )
+}
+
+type StopTestCase {
+  is_stop_key_signed: Bool,
+  is_ref_token_burned: Bool,
+}
+
+fn make_mock_tx_body_for_stop(test_case: StopTestCase) {
+  let registry_token_value =
+    from_asset(mock_policy_id_3(), get_registry_token_name(0), 1)
+  let mint =
+    if test_case.is_ref_token_burned {
+      to_minted_value(negate(registry_token_value))
+    } else {
+      to_minted_value(zero())
+    }
+
+  Transaction {
+    ..placeholder(),
+    reference_inputs: [
+      Input {
+        output_reference: mock_utxo_ref(0),
+        output: mock_oracle_output(mock_oracle_datum()),
+      },
+    ],
+    inputs: [
+      Input {
+        output_reference: mock_utxo_ref(1),
+        output: Output {
+          ..mock_ownership_registry_output(
+            0,
+            OwnershipRegistryDatum { count: 0, registry: dict.new() },
+          ),
+          value: registry_token_value |> add(#"", #"", 2_000_000),
+        },
+      },
+    ],
+    outputs: [
+      Output {
+        ..mock_ownership_registry_output(
+          0,
+          OwnershipRegistryDatum { count: 0, registry: dict.new() },
+        ),
+        value: if test_case.is_ref_token_burned {
+          zero()
+        } else {
+          registry_token_value
+        }
+          |> add(#"", #"", 2_000_000),
+      },
+    ],
+    extra_signatories: [
+      if test_case.is_stop_key_signed {
+        mock_oracle_datum().stop_key
+      } else {
+        mock_oracle_datum().operation_key
+      },
+    ],
+    mint: mint,
+  }
+}
+
+fn stop_base_case(test_case: StopTestCase) {
+  let current_registry = dict.new()
+  let dat = OwnershipRegistryDatum { count: 0, registry: current_registry }
+  let tx = make_mock_tx_body_for_stop(test_case)
+  let redeemer = StopOwnershipRegistry
+  let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(2)), transaction: tx }
+  ownership_registry_logic(mock_policy_id(), dat, redeemer, ctx)
+}
+
+fn success_stop_registry() {
+  stop_base_case(
+    StopTestCase { is_stop_key_signed: True, is_ref_token_burned: True },
+  )
+}
+
+fn fail_stop_registry_without_stop_key() {
+  !stop_base_case(
+    StopTestCase { is_stop_key_signed: False, is_ref_token_burned: True },
+  )
+}
+
+fn fail_stop_registry_without_ref_token_burned() {
+  !stop_base_case(
+    StopTestCase { is_stop_key_signed: True, is_ref_token_burned: False },
   )
 }
