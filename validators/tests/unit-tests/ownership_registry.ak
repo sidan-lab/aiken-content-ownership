@@ -395,7 +395,7 @@ fn make_mock_tx_body_for_stop(test_case: StopTestCase) {
     ],
     inputs: [
       Input {
-        output_reference: mock_utxo_ref(1),
+        output_reference: mock_utxo_ref(2),
         output: Output {
           ..mock_ownership_registry_output(
             0,
@@ -407,10 +407,7 @@ fn make_mock_tx_body_for_stop(test_case: StopTestCase) {
     ],
     outputs: [
       Output {
-        ..mock_ownership_registry_output(
-          0,
-          OwnershipRegistryDatum { count: 0, registry: dict.new() },
-        ),
+        ..mock_output(),
         value: if test_case.is_ref_token_burned {
           zero()
         } else {
@@ -439,19 +436,19 @@ fn stop_base_case(test_case: StopTestCase) {
   ownership_registry_logic(mock_policy_id(), dat, redeemer, ctx)
 }
 
-fn success_stop_registry() {
+test success_stop_registry() {
   stop_base_case(
     StopTestCase { is_stop_key_signed: True, is_ref_token_burned: True },
   )
 }
 
-fn fail_stop_registry_without_stop_key() {
+test fail_stop_registry_without_stop_key() {
   !stop_base_case(
     StopTestCase { is_stop_key_signed: False, is_ref_token_burned: True },
   )
 }
 
-fn fail_stop_registry_without_ref_token_burned() {
+test fail_stop_registry_without_ref_token_burned() {
   !stop_base_case(
     StopTestCase { is_stop_key_signed: True, is_ref_token_burned: False },
   )

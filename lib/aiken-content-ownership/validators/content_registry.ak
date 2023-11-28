@@ -4,13 +4,15 @@ use aiken/list
 use aiken/transaction.{
   InlineDatum, ScriptContext, ScriptPurpose, Spend, Transaction,
 }
-use aiken/transaction/value.{PolicyId, flatten}
+use aiken/transaction/value.{
+  PolicyId, flatten, from_minted_value, negate, without_lovelace,
+}
 use aiken_content_ownership/common.{
-  inputs_at_with_policy, inputs_with, outputs_at_with,
+  inputs_at_with_policy, inputs_with, key_signed, outputs_at_with,
 }
 use aiken_content_ownership/types.{
   ContentRegistryDatum, ContentRegistryRedeemer, CreateContent, OracleDatum,
-  OwnershipRegistryDatum,
+  OwnershipRegistryDatum, StopContentRegistry,
 }
 
 pub fn content_registry_logic(
@@ -20,7 +22,14 @@ pub fn content_registry_logic(
   context: ScriptContext,
 ) {
   let ScriptContext { purpose, transaction } = context
-  let Transaction { reference_inputs, inputs, outputs, .. } = transaction
+  let Transaction {
+    reference_inputs,
+    inputs,
+    outputs,
+    extra_signatories,
+    mint,
+    ..
+  } = transaction
   expect Spend(_): ScriptPurpose = purpose
   when (redeemer, inputs_with(reference_inputs, oracle_nft, "")) is {
     (CreateContent { content_hash, owner }, [oracle_ref_utxo]) -> {
@@ -116,6 +125,31 @@ pub fn content_registry_logic(
           let ownership_registry_value_clean =
             list.length(flatten(ownership_output.value)) == 2
           ref_tokens_equal && current_count_equal && content_new_datum_correct && ownership_new_datum_correct && content_registry_value_clean && ownership_registry_value_clean
+        }
+        _ -> False
+      }
+    }
+    (StopContentRegistry, [oracle_ref_utxo]) -> {
+      expect InlineDatum(inline_datum) = oracle_ref_utxo.output.datum
+      expect OracleDatum {
+        stop_key,
+        content_registry_ref_token,
+        content_registry_address,
+        ..
+      }: OracleDatum = inline_datum
+      when
+        inputs_at_with_policy(
+          inputs,
+          content_registry_address,
+          content_registry_ref_token,
+        )
+      is {
+        [content_input] -> {
+          let is_stop_key_signed = key_signed(extra_signatories, stop_key)
+          let content_ref_token = content_input.output.value |> without_lovelace
+          let is_ref_token_burned =
+            from_minted_value(mint) == negate(content_ref_token)
+          is_stop_key_signed && is_ref_token_burned
         }
         _ -> False
       }
