@@ -1,6 +1,6 @@
 use aiken/bytearray
 use aiken/list
-use aiken/transaction.{Input, Output}
+use aiken/transaction.{Input, Output, Spend}
 use aiken/transaction/credential.{Address}
 use aiken/transaction/value.{
   AssetName, MintedValue, PolicyId, Value, flatten, from_minted_value,
@@ -159,6 +159,15 @@ pub fn all_key_signed(witnesses: List<ByteArray>, keys: List<ByteArray>) {
 
 pub fn value_length(value: Value) -> Int {
   list.length(flatten(value))
+}
+
+pub fn compare_output_reference(x, y) {
+  expect Spend(out_ref_x) = x
+  expect Spend(out_ref_y) = y
+  bytearray.compare(
+    out_ref_x.transaction_id.hash,
+    out_ref_y.transaction_id.hash,
+  )
 }
 
 test byte_conversion() {
