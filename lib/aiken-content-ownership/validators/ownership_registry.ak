@@ -23,15 +23,20 @@ pub fn ownership_registry_logic(
       expect InlineDatum(inline_datum) = oracle_ref_utxo.output.datum
       expect OracleDatum { content_registry_address, .. }: OracleDatum =
         inline_datum
-      expect [content_input] = inputs_at(inputs, content_registry_address)
-      expect Some(raw_redeemer) =
-        dict.get(redeemers, Spend(content_input.output_reference))
-      expect parsed_redeemer: ContentRegistryRedeemer = raw_redeemer
-      when parsed_redeemer is {
-        CreateContent { content_hash: _, owner: _ } -> True
+      when inputs_at(inputs, content_registry_address) is {
+        [content_input] -> {
+          expect Some(raw_redeemer) =
+            dict.get(redeemers, Spend(content_input.output_reference))
+          expect parsed_redeemer: ContentRegistryRedeemer = raw_redeemer
+          when parsed_redeemer is {
+            CreateContent { content_hash: _, owner: _ } -> True
+            _ -> False
+          }
+        }
         _ -> False
       }
     }
+
     _ -> False
   }
 }
