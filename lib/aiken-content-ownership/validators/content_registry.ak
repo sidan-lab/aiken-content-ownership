@@ -178,7 +178,7 @@ pub fn content_registry_logic(
                 ref_token.2nd,
               ),
             )
-          let is_regisry_updated =
+          let is_registry_updated =
             check_is_content_registry_updated(
               content_input.output.datum,
               content_output.datum,
@@ -191,11 +191,11 @@ pub fn content_registry_logic(
             raw_ownership_ref_datum
           expect Some(original_owner) =
             dict.get(ownership_ref_datum.registry, content_number)
-          let is_update_authoized =
+          let is_update_authorized =
             inputs_token_quantity(inputs, original_owner) > 0
           let is_registry_value_clean =
             list.length(flatten(content_output.value)) == 2
-          is_regisry_updated && is_update_authoized && is_registry_value_clean
+          is_registry_updated && is_update_authorized && is_registry_value_clean
         }
         StopContentRegistry ->
           when
