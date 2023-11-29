@@ -14,7 +14,7 @@ use aiken_content_ownership/placeholder.{
 }
 use aiken_content_ownership/types.{
   ContentRegistryDatum, CreateContent, OwnershipRegistryDatum,
-  StopContentRegistry,
+  StopContentRegistry, UpdateContent,
 }
 use aiken_content_ownership/utils.{get_registry_token_name}
 use aiken_content_ownership/validators/content_registry.{content_registry_logic}
@@ -235,6 +235,183 @@ test fail_create_content_ownership_registry_value_unclean() {
   let test_case =
     TestCase { ..default_test_case(), is_ownership_registry_value_clean: False }
   !run_content_registry_test(test_case)
+}
+
+type UpdateTestCase {
+  is_registry_updated: Bool,
+  is_update_authorized: Bool,
+  is_registry_value_clean: Bool,
+}
+
+fn make_mock_tx_body_for_update(
+  record_count: Int,
+  content_registry: Dict<Int, ByteArray>,
+  ownership_registry: Dict<Int, (PolicyId, AssetName)>,
+  owner: (PolicyId, AssetName),
+  new_content_hash: ByteArray,
+  test_case: UpdateTestCase,
+) -> Transaction {
+  let content_registry_value =
+    from_asset(mock_policy_id_2(), get_registry_token_name(0), 1)
+      |> add(#"", #"", 2_000_000)
+  let auth_token =
+    if test_case.is_update_authorized {
+      owner
+    } else {
+      (owner.1st, "wrong_token")
+    }
+  let owner_output =
+    Output {
+      ..mock_output(),
+      value: mock_output().value
+        |> add(auth_token.1st, auth_token.2nd, 1)
+        |> if test_case.is_registry_value_clean {
+             add(_, #"", #"", 2_000_000)
+           } else {
+             add(_, mock_policy_id_4(), "another_token", 1)
+           },
+    }
+  let inputs =
+    [
+      Input {
+        output_reference: mock_utxo_ref(1),
+        output: Output {
+          ..mock_content_registry_output(
+            0,
+            ContentRegistryDatum { count: 6, registry: content_registry },
+          ),
+          value: content_registry_value,
+        },
+      },
+      Input { output_reference: mock_utxo_ref(3), output: owner_output },
+    ]
+
+  let outputs =
+    [
+      Output {
+        ..mock_content_registry_output(
+          0,
+          ContentRegistryDatum {
+            count: 6,
+            registry: if test_case.is_registry_updated {
+              dict.insert(
+                content_registry,
+                record_count,
+                new_content_hash,
+                int.compare,
+              )
+            } else {
+              content_registry
+            },
+          },
+        ),
+        value: if test_case.is_registry_value_clean {
+          content_registry_value
+        } else {
+          content_registry_value
+            |> add(mock_policy_id_4(), "another_token", 1)
+        },
+      },
+      owner_output,
+    ]
+
+  Transaction {
+    ..placeholder(),
+    reference_inputs: [
+      Input {
+        output_reference: mock_utxo_ref(0),
+        output: mock_oracle_output(mock_oracle_datum()),
+      },
+      Input {
+        output_reference: mock_utxo_ref(2),
+        output: Output {
+          ..mock_ownership_registry_output(
+            0,
+            OwnershipRegistryDatum { count: 6, registry: ownership_registry },
+          ),
+          value: from_asset(mock_policy_id_3(), get_registry_token_name(0), 1),
+        },
+      },
+    ],
+    inputs: inputs,
+    outputs: outputs,
+  }
+}
+
+fn update_base_case(test_case: UpdateTestCase) {
+  let content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCSUWk"
+  let new_content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCWkSU"
+  let current_registry =
+    dict.new()
+      |> dict.insert(0, content_hash, int.compare)
+      |> dict.insert(1, content_hash, int.compare)
+      |> dict.insert(2, content_hash, int.compare)
+      |> dict.insert(3, content_hash, int.compare)
+      |> dict.insert(4, content_hash, int.compare)
+      |> dict.insert(5, content_hash, int.compare)
+
+  let owner = (mock_policy_id_4(), "my_token_name")
+  let ownership_registry =
+    dict.new()
+      |> dict.insert(0, owner, int.compare)
+      |> dict.insert(1, owner, int.compare)
+      |> dict.insert(2, owner, int.compare)
+      |> dict.insert(3, owner, int.compare)
+      |> dict.insert(4, owner, int.compare)
+      |> dict.insert(5, owner, int.compare)
+  let dat = ContentRegistryDatum { count: 0, registry: current_registry }
+  let tx =
+    make_mock_tx_body_for_update(
+      4,
+      current_registry,
+      ownership_registry,
+      owner,
+      new_content_hash,
+      test_case,
+    )
+  let redeemer = UpdateContent { new_content_hash, content_number: 4 }
+  let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(2)), transaction: tx }
+  content_registry_logic(mock_policy_id(), dat, redeemer, ctx)
+}
+
+test success_update_content_record() {
+  update_base_case(
+    UpdateTestCase {
+      is_registry_updated: True,
+      is_update_authorized: True,
+      is_registry_value_clean: True,
+    },
+  )
+}
+
+test fail_update_content_record_without_auth_token() {
+  !update_base_case(
+    UpdateTestCase {
+      is_registry_updated: False,
+      is_update_authorized: True,
+      is_registry_value_clean: True,
+    },
+  )
+}
+
+test fail_update_content_record_without_registry_update() {
+  !update_base_case(
+    UpdateTestCase {
+      is_registry_updated: True,
+      is_update_authorized: False,
+      is_registry_value_clean: True,
+    },
+  )
+}
+
+test fail_update_content_record_without_clean_registry_value() {
+  !update_base_case(
+    UpdateTestCase {
+      is_registry_updated: True,
+      is_update_authorized: True,
+      is_registry_value_clean: False,
+    },
+  )
 }
 
 type StopTestCase {

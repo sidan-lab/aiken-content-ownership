@@ -34,6 +34,7 @@ pub type ContentRegistryDatum {
 
 pub type ContentRegistryRedeemer {
   CreateContent { content_hash: ByteArray, owner: (PolicyId, AssetName) }
+  UpdateContent { new_content_hash: ByteArray, content_number: Int }
   StopContentRegistry
 }
 
