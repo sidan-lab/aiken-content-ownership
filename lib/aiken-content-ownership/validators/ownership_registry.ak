@@ -4,7 +4,7 @@ use aiken/transaction.{
   InlineDatum, ScriptContext, ScriptPurpose, Spend, Transaction,
 }
 use aiken/transaction/value.{
-  PolicyId, flatten, from_minted_value, negate, without_lovelace,
+  AssetName, PolicyId, flatten, from_minted_value, negate, without_lovelace,
 }
 use aiken_content_ownership/common.{
   inputs_at, inputs_at_with_policy, inputs_token_quantity, inputs_with,
@@ -14,6 +14,17 @@ use aiken_content_ownership/types.{
   ContentRegistryRedeemer, CreateContent, CreateOwnershipRecord, OracleDatum,
   OwnershipRegistryDatum, OwnershipRegistryRedeemer, StopOwnershipRegistry,
   TransferOwnership,
+}
+
+pub fn update_ownership_registry_at(
+  registry: List<(PolicyId, AssetName)>,
+  index: Int,
+  new_value: (PolicyId, AssetName),
+) -> List<(PolicyId, AssetName)> {
+  let spanned_registry = list.span(registry, index)
+  expect Some(dropped_head_tail) = list.tail(spanned_registry.2nd)
+  let updated_tail = list.push(dropped_head_tail, new_value)
+  list.concat(spanned_registry.1st, updated_tail)
 }
 
 pub fn ownership_registry_logic(
@@ -85,7 +96,11 @@ pub fn ownership_registry_logic(
               let is_registry_updated =
                 output_datum == OwnershipRegistryDatum {
                   count: input_datum.count,
-                  registry: list.concat(input_datum.registry, [new_owner_token]),
+                  registry: update_ownership_registry_at(
+                    input_datum.registry,
+                    content_number,
+                    new_owner_token,
+                  ),
                 }
               let is_registry_value_clean =
                 list.length(flatten(ownership_output.value)) == 2

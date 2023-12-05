@@ -19,7 +19,7 @@ use aiken_content_ownership/types.{
 }
 use aiken_content_ownership/utils.{get_registry_token_name}
 use aiken_content_ownership/validators/ownership_registry.{
-  ownership_registry_logic,
+  ownership_registry_logic, update_ownership_registry_at,
 }
 
 type CreateTestCase {
@@ -252,7 +252,11 @@ fn make_mock_tx_body_for_update(
           OwnershipRegistryDatum {
             count: record_count,
             registry: if test_case.is_registry_updated {
-              list.concat(ownership_registry, [new_owner])
+              update_ownership_registry_at(
+                ownership_registry,
+                record_count,
+                new_owner,
+              )
             } else {
               ownership_registry
             },

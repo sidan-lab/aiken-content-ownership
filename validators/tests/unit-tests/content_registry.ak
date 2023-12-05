@@ -16,7 +16,9 @@ use aiken_content_ownership/types.{
   StopContentRegistry, UpdateContent,
 }
 use aiken_content_ownership/utils.{get_registry_token_name}
-use aiken_content_ownership/validators/content_registry.{content_registry_logic}
+use aiken_content_ownership/validators/content_registry.{
+  content_registry_logic, update_content_registry_at,
+}
 
 type TestCase {
   is_content_count_updated: Bool,
@@ -242,6 +244,7 @@ type UpdateTestCase {
 }
 
 fn make_mock_tx_body_for_update(
+  record_count: Int,
   content_registry: List<ByteArray>,
   ownership_registry: List<(PolicyId, AssetName)>,
   owner: (PolicyId, AssetName),
@@ -291,7 +294,11 @@ fn make_mock_tx_body_for_update(
           ContentRegistryDatum {
             count: 6,
             registry: if test_case.is_registry_updated {
-              list.concat(content_registry, [new_content_hash])
+              update_content_registry_at(
+                content_registry,
+                record_count,
+                new_content_hash,
+              )
             } else {
               content_registry
             },
@@ -349,6 +356,7 @@ fn update_base_case(test_case: UpdateTestCase) {
   let dat = ContentRegistryDatum { count: 0, registry: current_registry }
   let tx =
     make_mock_tx_body_for_update(
+      4,
       current_registry,
       ownership_registry,
       owner,

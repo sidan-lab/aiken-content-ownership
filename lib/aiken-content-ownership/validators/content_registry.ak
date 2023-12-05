@@ -14,19 +14,37 @@ use aiken_content_ownership/types.{
   OwnershipRegistryDatum, StopContentRegistry, UpdateContent,
 }
 
+pub fn update_content_registry_at(
+  registry: List<ByteArray>,
+  index: Int,
+  new_value: ByteArray,
+) -> List<ByteArray> {
+  let spanned_registry = list.span(registry, index)
+  expect Some(dropped_head_tail) = list.tail(spanned_registry.2nd)
+  let updated_tail = list.push(dropped_head_tail, new_value)
+  list.concat(spanned_registry.1st, updated_tail)
+}
+
 pub fn check_is_content_registry_updated(
   old_datum: Datum,
   new_datum: Datum,
+  content_number: Int,
   new_content_hash: ByteArray,
 ) -> Bool {
   expect InlineDatum(raw_input_datum) = old_datum
   expect input_datum: ContentRegistryDatum = raw_input_datum
   expect InlineDatum(raw_output_datum) = new_datum
   expect output_datum: ContentRegistryDatum = raw_output_datum
+  let updated_registry =
+    update_content_registry_at(
+      input_datum.registry,
+      content_number,
+      new_content_hash,
+    )
   let is_content_registry_updated =
     output_datum == ContentRegistryDatum {
       count: input_datum.count,
-      registry: list.concat(input_datum.registry, [new_content_hash]),
+      registry: updated_registry,
     }
   is_content_registry_updated
 }
@@ -167,6 +185,7 @@ pub fn content_registry_logic(
             check_is_content_registry_updated(
               content_input.output.datum,
               content_output.datum,
+              content_number,
               new_content_hash,
             )
           expect InlineDatum(raw_ownership_ref_datum) =
