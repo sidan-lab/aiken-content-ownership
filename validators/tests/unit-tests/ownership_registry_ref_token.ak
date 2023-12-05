@@ -1,4 +1,3 @@
-use aiken/dict
 use aiken/transaction.{
   Input, Mint, Output, ScriptContext, Transaction, placeholder,
 }
@@ -47,9 +46,9 @@ fn make_mock_tx_body(record_count: Int, test_case: TestCase) -> Transaction {
     }
   let new_registry =
     if is_registry_initialized {
-      mock_ownership_registry_datum(0, dict.new())
+      mock_ownership_registry_datum(0, [])
     } else {
-      mock_ownership_registry_datum(1, dict.new())
+      mock_ownership_registry_datum(1, [])
     }
   let oracle_value =
     if is_oracle_value_clean {

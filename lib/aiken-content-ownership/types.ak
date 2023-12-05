@@ -1,4 +1,3 @@
-use aiken/dict.{Dict}
 use aiken/transaction/credential.{Address}
 use aiken/transaction/value.{AssetName, PolicyId}
 
@@ -29,7 +28,7 @@ pub type OracleRedeemer {
 
 pub type ContentRegistryDatum {
   count: Int,
-  registry: Dict<Int, ByteArray>,
+  registry: List<ByteArray>,
 }
 
 pub type ContentRegistryRedeemer {
@@ -40,7 +39,7 @@ pub type ContentRegistryRedeemer {
 
 pub type OwnershipRegistryDatum {
   count: Int,
-  registry: Dict<Int, (PolicyId, AssetName)>,
+  registry: List<(PolicyId, AssetName)>,
 }
 
 pub type OwnershipRegistryRedeemer {

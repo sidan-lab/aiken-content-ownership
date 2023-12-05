@@ -1,5 +1,3 @@
-use aiken/dict
-// use aiken/list
 use aiken/transaction.{
   InlineDatum, Input, Mint, Output, ScriptContext, Transaction,
 }
@@ -54,8 +52,7 @@ pub fn ownership_registry_ref_token_logic(
                   ..input_datum,
                   ownership_registry_count: ownership_registry_count + 1,
                 }
-              let registry_initial_datum_correct =
-                count == 0 && registry == dict.new()
+              let registry_initial_datum_correct = count == 0 && registry == []
               let oracle_output_value_clean =
                 value_length(oracle_output.value) == 2
               let registry_output_value_clean =

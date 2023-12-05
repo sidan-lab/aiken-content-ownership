@@ -1,5 +1,5 @@
-use aiken/dict.{Dict}
-use aiken/int
+use aiken/dict
+use aiken/list
 use aiken/transaction.{
   Input, Output, ScriptContext, Spend, Transaction, placeholder,
 }
@@ -49,8 +49,8 @@ fn default_test_case() -> TestCase {
 
 fn make_mock_tx_body(
   record_count: Int,
-  content_registry: Dict<Int, ByteArray>,
-  ownership_registry: Dict<Int, (PolicyId, AssetName)>,
+  content_registry: List<ByteArray>,
+  ownership_registry: List<(PolicyId, AssetName)>,
   content_hash: ByteArray,
   owner: (PolicyId, AssetName),
   test_case: TestCase,
@@ -80,13 +80,13 @@ fn make_mock_tx_body(
     }
   let new_content_registry =
     if is_content_registry_updated {
-      dict.insert(content_registry, record_count, content_hash, int.compare)
+      list.concat(content_registry, [content_hash])
     } else {
       content_registry
     }
   let new_ownership_registry =
     if is_ownership_registry_updated {
-      dict.insert(ownership_registry, record_count, owner, int.compare)
+      list.concat(ownership_registry, [owner])
     } else {
       ownership_registry
     }
@@ -199,10 +199,9 @@ fn make_mock_tx_body(
 fn run_create_content_test(test_case: TestCase) -> Bool {
   let content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCSUWk"
   let owner = (mock_policy_id_4(), "my_token_name")
-  let transaction =
-    make_mock_tx_body(0, dict.new(), dict.new(), content_hash, owner, test_case)
-  let content_dat = mock_content_registry_datum(0, dict.new())
-  let ownership_dat = mock_ownership_registry_datum(0, dict.new())
+  let transaction = make_mock_tx_body(0, [], [], content_hash, owner, test_case)
+  let content_dat = mock_content_registry_datum(0, [])
+  let ownership_dat = mock_ownership_registry_datum(0, [])
   let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(1)), transaction }
   ownership_registry_logic(
     mock_policy_id(),
@@ -276,4 +275,76 @@ test fail_create_content_record_with_incorrect_redeemer() {
       is_content_registry_redeemer_correct: False,
     }
   !run_create_content_test(test_case)
+}
+
+fn create_preloaded_content_registry(
+  registry: List<ByteArray>,
+  curr: Int,
+  size: Int,
+) -> List<ByteArray> {
+  let content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCSUWk"
+  let new_registry = list.concat(registry, [content_hash])
+  if curr == size {
+    new_registry
+  } else {
+    create_preloaded_content_registry(new_registry, curr + 1, size)
+  }
+}
+
+fn mock_content_registry_datum_at_scale(size: Int) -> ContentRegistryDatum {
+  let registry = create_preloaded_content_registry([], 0, size)
+  ContentRegistryDatum { count: size, registry }
+}
+
+fn create_preloaded_ownership_registry(
+  registry: List<(PolicyId, AssetName)>,
+  curr: Int,
+  size: Int,
+) -> List<(PolicyId, AssetName)> {
+  let owner = (mock_policy_id_4(), "my_token_name")
+  let new_registry = list.concat(registry, [owner])
+  if curr == size {
+    new_registry
+  } else {
+    create_preloaded_ownership_registry(new_registry, curr + 1, size)
+  }
+}
+
+fn mock_ownership_registry_datum_at_scale(size: Int) -> OwnershipRegistryDatum {
+  let registry = create_preloaded_ownership_registry([], 0, size)
+  OwnershipRegistryDatum { count: size, registry }
+}
+
+fn run_create_content_at_scale_test(test_case: TestCase) -> Bool {
+  let content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCSUWk"
+  let owner = (mock_policy_id_4(), "my_token_name")
+  let content_registry = create_preloaded_content_registry([], 0, 50)
+  let ownership_registry = create_preloaded_ownership_registry([], 0, 50)
+  let transaction =
+    make_mock_tx_body(
+      0,
+      content_registry,
+      ownership_registry,
+      content_hash,
+      owner,
+      test_case,
+    )
+  let content_dat = mock_content_registry_datum(0, [])
+  let ownership_dat = mock_ownership_registry_datum(0, [])
+  let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(1)), transaction }
+  ownership_registry_logic(
+    mock_policy_id(),
+    ownership_dat,
+    CreateOwnershipRecord,
+    ctx,
+  ) && content_registry_logic(
+    mock_policy_id(),
+    content_dat,
+    CreateContent { content_hash, owner },
+    ctx,
+  )
+}
+
+test success_create_content_at_scale() {
+  run_create_content_at_scale_test(default_test_case())
 }

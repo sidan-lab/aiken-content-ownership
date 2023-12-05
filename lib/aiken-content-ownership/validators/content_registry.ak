@@ -1,5 +1,3 @@
-use aiken/dict
-use aiken/int
 use aiken/list
 use aiken/transaction.{
   Datum, InlineDatum, ScriptContext, ScriptPurpose, Spend, Transaction,
@@ -19,7 +17,6 @@ use aiken_content_ownership/types.{
 pub fn check_is_content_registry_updated(
   old_datum: Datum,
   new_datum: Datum,
-  content_number: Int,
   new_content_hash: ByteArray,
 ) -> Bool {
   expect InlineDatum(raw_input_datum) = old_datum
@@ -29,12 +26,7 @@ pub fn check_is_content_registry_updated(
   let is_content_registry_updated =
     output_datum == ContentRegistryDatum {
       count: input_datum.count,
-      registry: dict.insert(
-        input_datum.registry,
-        content_number,
-        new_content_hash,
-        int.compare,
-      ),
+      registry: list.concat(input_datum.registry, [new_content_hash]),
     }
   is_content_registry_updated
 }
@@ -131,28 +123,21 @@ pub fn content_registry_logic(
               let content_new_datum_correct =
                 content_output_datum == ContentRegistryDatum {
                   count: content_input_datum.count + 1,
-                  registry: dict.insert(
+                  registry: list.concat(
                     content_input_datum.registry,
-                    content_input_datum.count,
-                    content_hash,
-                    int.compare,
+                    [content_hash],
                   ),
                 }
               let ownership_new_datum_correct =
                 ownership_output_datum == OwnershipRegistryDatum {
                   count: ownership_input_datum.count + 1,
-                  registry: dict.insert(
-                    ownership_input_datum.registry,
-                    ownership_input_datum.count,
-                    owner,
-                    int.compare,
-                  ),
+                  registry: list.concat(ownership_input_datum.registry, [owner]),
                 }
               let content_registry_value_clean =
                 list.length(flatten(content_output.value)) == 2
               let ownership_registry_value_clean =
                 list.length(flatten(ownership_output.value)) == 2
-              ref_tokens_equal && current_count_equal && content_new_datum_correct && ownership_new_datum_correct && content_registry_value_clean && ownership_registry_value_clean
+              ref_tokens_equal && current_count_equal && content_registry_value_clean && ownership_registry_value_clean && content_new_datum_correct && ownership_new_datum_correct
             }
             _ -> False
           }
@@ -182,7 +167,6 @@ pub fn content_registry_logic(
             check_is_content_registry_updated(
               content_input.output.datum,
               content_output.datum,
-              content_number,
               new_content_hash,
             )
           expect InlineDatum(raw_ownership_ref_datum) =
@@ -190,7 +174,7 @@ pub fn content_registry_logic(
           expect ownership_ref_datum: OwnershipRegistryDatum =
             raw_ownership_ref_datum
           expect Some(original_owner) =
-            dict.get(ownership_ref_datum.registry, content_number)
+            list.at(ownership_ref_datum.registry, content_number)
           let is_update_authorized =
             inputs_token_quantity(inputs, original_owner) > 0
           let is_registry_value_clean =

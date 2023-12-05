@@ -1,5 +1,4 @@
 use aiken/dict
-use aiken/int
 use aiken/list
 use aiken/transaction.{
   InlineDatum, ScriptContext, ScriptPurpose, Spend, Transaction,
@@ -80,18 +79,13 @@ pub fn ownership_registry_logic(
               expect InlineDatum(raw_output_datum) = ownership_output.datum
               expect output_datum: OwnershipRegistryDatum = raw_output_datum
               expect Some(original_owner) =
-                dict.get(input_datum.registry, content_number)
+                list.at(input_datum.registry, content_number)
               let is_original_owner_authorized =
                 inputs_token_quantity(inputs, original_owner) > 0
               let is_registry_updated =
                 output_datum == OwnershipRegistryDatum {
                   count: input_datum.count,
-                  registry: dict.insert(
-                    input_datum.registry,
-                    content_number,
-                    new_owner_token,
-                    int.compare,
-                  ),
+                  registry: list.concat(input_datum.registry, [new_owner_token]),
                 }
               let is_registry_value_clean =
                 list.length(flatten(ownership_output.value)) == 2

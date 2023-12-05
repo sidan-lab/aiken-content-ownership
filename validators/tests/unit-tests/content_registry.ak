@@ -1,5 +1,4 @@
-use aiken/dict.{Dict}
-use aiken/int
+use aiken/list
 use aiken/transaction.{
   Input, Output, ScriptContext, Spend, Transaction, placeholder,
 }
@@ -45,8 +44,8 @@ fn default_test_case() -> TestCase {
 
 fn make_mock_tx_body(
   record_count: Int,
-  content_registry: Dict<Int, ByteArray>,
-  ownership_registry: Dict<Int, (PolicyId, AssetName)>,
+  content_registry: List<ByteArray>,
+  ownership_registry: List<(PolicyId, AssetName)>,
   content_hash: ByteArray,
   owner: (PolicyId, AssetName),
   test_case: TestCase,
@@ -75,13 +74,13 @@ fn make_mock_tx_body(
     }
   let new_content_registry =
     if is_content_registry_updated {
-      dict.insert(content_registry, record_count, content_hash, int.compare)
+      list.concat(content_registry, [content_hash])
     } else {
       content_registry
     }
   let new_ownership_registry =
     if is_ownership_registry_updated {
-      dict.insert(ownership_registry, record_count, owner, int.compare)
+      list.concat(ownership_registry, [owner])
     } else {
       ownership_registry
     }
@@ -173,9 +172,8 @@ fn make_mock_tx_body(
 fn run_content_registry_test(test_case: TestCase) -> Bool {
   let content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCSUWk"
   let owner = (mock_policy_id_4(), "my_token_name")
-  let transaction =
-    make_mock_tx_body(0, dict.new(), dict.new(), content_hash, owner, test_case)
-  let dat = mock_content_registry_datum(0, dict.new())
+  let transaction = make_mock_tx_body(0, [], [], content_hash, owner, test_case)
+  let dat = mock_content_registry_datum(0, [])
   let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(1)), transaction }
   content_registry_logic(
     mock_policy_id(),
@@ -244,9 +242,8 @@ type UpdateTestCase {
 }
 
 fn make_mock_tx_body_for_update(
-  record_count: Int,
-  content_registry: Dict<Int, ByteArray>,
-  ownership_registry: Dict<Int, (PolicyId, AssetName)>,
+  content_registry: List<ByteArray>,
+  ownership_registry: List<(PolicyId, AssetName)>,
   owner: (PolicyId, AssetName),
   new_content_hash: ByteArray,
   test_case: UpdateTestCase,
@@ -294,12 +291,7 @@ fn make_mock_tx_body_for_update(
           ContentRegistryDatum {
             count: 6,
             registry: if test_case.is_registry_updated {
-              dict.insert(
-                content_registry,
-                record_count,
-                new_content_hash,
-                int.compare,
-              )
+              list.concat(content_registry, [new_content_hash])
             } else {
               content_registry
             },
@@ -342,27 +334,21 @@ fn update_base_case(test_case: UpdateTestCase) {
   let content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCSUWk"
   let new_content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCWkSU"
   let current_registry =
-    dict.new()
-      |> dict.insert(0, content_hash, int.compare)
-      |> dict.insert(1, content_hash, int.compare)
-      |> dict.insert(2, content_hash, int.compare)
-      |> dict.insert(3, content_hash, int.compare)
-      |> dict.insert(4, content_hash, int.compare)
-      |> dict.insert(5, content_hash, int.compare)
+    [
+      content_hash,
+      content_hash,
+      content_hash,
+      content_hash,
+      content_hash,
+      content_hash,
+    ]
 
   let owner = (mock_policy_id_4(), "my_token_name")
   let ownership_registry =
-    dict.new()
-      |> dict.insert(0, owner, int.compare)
-      |> dict.insert(1, owner, int.compare)
-      |> dict.insert(2, owner, int.compare)
-      |> dict.insert(3, owner, int.compare)
-      |> dict.insert(4, owner, int.compare)
-      |> dict.insert(5, owner, int.compare)
+    [owner, owner, owner, owner, owner, owner]
   let dat = ContentRegistryDatum { count: 0, registry: current_registry }
   let tx =
     make_mock_tx_body_for_update(
-      4,
       current_registry,
       ownership_registry,
       owner,
@@ -443,7 +429,7 @@ fn make_mock_tx_body_for_stop(test_case: StopTestCase) {
         output: Output {
           ..mock_content_registry_output(
             0,
-            ContentRegistryDatum { count: 0, registry: dict.new() },
+            ContentRegistryDatum { count: 0, registry: [] },
           ),
           value: registry_token_value |> add(#"", #"", 2_000_000),
         },
@@ -472,7 +458,8 @@ fn make_mock_tx_body_for_stop(test_case: StopTestCase) {
 }
 
 fn stop_base_case(test_case: StopTestCase) {
-  let current_registry = dict.new()
+  let current_registry =
+    []
   let dat = ContentRegistryDatum { count: 0, registry: current_registry }
   let tx = make_mock_tx_body_for_stop(test_case)
   let redeemer = StopContentRegistry

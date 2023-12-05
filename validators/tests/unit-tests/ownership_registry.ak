@@ -1,5 +1,4 @@
-use aiken/dict.{Dict}
-use aiken/int
+use aiken/dict
 use aiken/list
 use aiken/transaction.{
   Input, Output, ScriptContext, Spend, Transaction, placeholder,
@@ -30,8 +29,8 @@ type CreateTestCase {
 
 fn make_mock_tx_body_for_create(
   record_count: Int,
-  content_registry: Dict<Int, ByteArray>,
-  ownership_registry: Dict<Int, (PolicyId, AssetName)>,
+  content_registry: List<ByteArray>,
+  ownership_registry: List<(PolicyId, AssetName)>,
   content_hash: ByteArray,
   owner: (PolicyId, AssetName),
   test_case: CreateTestCase,
@@ -97,12 +96,7 @@ fn make_mock_tx_body_for_create(
             0,
             ContentRegistryDatum {
               count: record_count + 1,
-              registry: dict.insert(
-                content_registry,
-                record_count,
-                content_hash,
-                int.compare,
-              ),
+              registry: list.concat(content_registry, [content_hash]),
             },
           ),
           value: content_registry_value,
@@ -137,12 +131,7 @@ fn make_mock_tx_body_for_create(
           0,
           OwnershipRegistryDatum {
             count: record_count + 1,
-            registry: dict.insert(
-              ownership_registry,
-              record_count,
-              owner,
-              int.compare,
-            ),
+            registry: list.concat(ownership_registry, [owner]),
           },
         ),
         value: ownership_registry_value,
@@ -165,18 +154,11 @@ fn make_mock_tx_body_for_create(
 
 fn create_base_case(test_case: CreateTestCase) {
   let redeemer = CreateOwnershipRecord
-  let dat = OwnershipRegistryDatum { count: 0, registry: dict.new() }
+  let dat = OwnershipRegistryDatum { count: 0, registry: [] }
   let content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCSUWk"
   let owner = (mock_policy_id_4(), "my_token_name")
   let tx =
-    make_mock_tx_body_for_create(
-      0,
-      dict.new(),
-      dict.new(),
-      content_hash,
-      owner,
-      test_case,
-    )
+    make_mock_tx_body_for_create(0, [], [], content_hash, owner, test_case)
   let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(2)), transaction: tx }
   ownership_registry_logic(mock_policy_id(), dat, redeemer, ctx)
 }
@@ -216,7 +198,7 @@ type UpdateTestCase {
 
 fn make_mock_tx_body_for_update(
   record_count: Int,
-  ownership_registry: Dict<Int, (PolicyId, AssetName)>,
+  ownership_registry: List<(PolicyId, AssetName)>,
   original_owner: (PolicyId, AssetName),
   new_owner: (PolicyId, AssetName),
   test_case: UpdateTestCase,
@@ -270,12 +252,7 @@ fn make_mock_tx_body_for_update(
           OwnershipRegistryDatum {
             count: record_count,
             registry: if test_case.is_registry_updated {
-              dict.insert(
-                ownership_registry,
-                record_count,
-                new_owner,
-                int.compare,
-              )
+              list.concat(ownership_registry, [new_owner])
             } else {
               ownership_registry
             },
@@ -306,13 +283,14 @@ fn make_mock_tx_body_for_update(
 
 fn update_base_case(test_case: UpdateTestCase) {
   let current_registry =
-    dict.new()
-      |> dict.insert(0, (mock_policy_id(), "my_token_name"), int.compare)
-      |> dict.insert(1, (mock_policy_id(), "my_token_name"), int.compare)
-      |> dict.insert(2, (mock_policy_id(), "my_token_name"), int.compare)
-      |> dict.insert(3, (mock_policy_id(), "my_token_name"), int.compare)
-      |> dict.insert(4, (mock_policy_id_4(), "my_token_name"), int.compare)
-      |> dict.insert(5, (mock_policy_id(), "my_token_name"), int.compare)
+    [
+      (mock_policy_id(), "my_token_name"),
+      (mock_policy_id(), "my_token_name"),
+      (mock_policy_id(), "my_token_name"),
+      (mock_policy_id(), "my_token_name"),
+      (mock_policy_id_4(), "my_token_name"),
+      (mock_policy_id(), "my_token_name"),
+    ]
   let dat = OwnershipRegistryDatum { count: 0, registry: current_registry }
   let original_owner = (mock_policy_id_4(), "my_token_name")
   let new_owner = (mock_policy_id_5(), "my_another_token_name")
@@ -399,7 +377,7 @@ fn make_mock_tx_body_for_stop(test_case: StopTestCase) {
         output: Output {
           ..mock_ownership_registry_output(
             0,
-            OwnershipRegistryDatum { count: 0, registry: dict.new() },
+            OwnershipRegistryDatum { count: 0, registry: [] },
           ),
           value: registry_token_value |> add(#"", #"", 2_000_000),
         },
@@ -428,7 +406,8 @@ fn make_mock_tx_body_for_stop(test_case: StopTestCase) {
 }
 
 fn stop_base_case(test_case: StopTestCase) {
-  let current_registry = dict.new()
+  let current_registry =
+    []
   let dat = OwnershipRegistryDatum { count: 0, registry: current_registry }
   let tx = make_mock_tx_body_for_stop(test_case)
   let redeemer = StopOwnershipRegistry

@@ -1,4 +1,3 @@
-use aiken/dict.{Dict}
 use aiken/transaction.{
   InlineDatum, NoDatum, Output, OutputReference, TransactionId,
 }
@@ -158,7 +157,7 @@ pub fn mock_oracle_output(oracle_datum: OracleDatum) -> Output {
 
 pub fn mock_content_registry_datum(
   count: Int,
-  registry: Dict<Int, ByteArray>,
+  registry: List<ByteArray>,
 ) -> ContentRegistryDatum {
   ContentRegistryDatum { count, registry }
 }
@@ -182,7 +181,7 @@ pub fn mock_content_registry_output(
 
 pub fn mock_ownership_registry_datum(
   count: Int,
-  registry: Dict<Int, (ByteArray, ByteArray)>,
+  registry: List<(ByteArray, ByteArray)>,
 ) -> OwnershipRegistryDatum {
   OwnershipRegistryDatum { count, registry }
 }
