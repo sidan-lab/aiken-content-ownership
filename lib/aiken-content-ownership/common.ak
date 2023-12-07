@@ -170,13 +170,11 @@ pub fn compare_output_reference(x, y) {
   )
 }
 
-pub fn inputs_token_quantity(
-  inputs: List<Input>,
-  token: (PolicyId, AssetName),
-) -> Int {
+pub fn inputs_token_quantity(inputs: List<Input>, token: List<ByteArray>) -> Int {
+  expect [policy, tokenName] = token
   list.map(
     inputs,
-    fn(input) { quantity_of(input.output.value, token.1st, token.2nd) },
+    fn(input) { quantity_of(input.output.value, policy, tokenName) },
   )
     |> list.foldr(0, fn(n, total) { n + total })
 }

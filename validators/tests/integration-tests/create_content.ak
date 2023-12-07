@@ -3,7 +3,7 @@ use aiken/list
 use aiken/transaction.{
   Input, Output, ScriptContext, Spend, Transaction, placeholder,
 }
-use aiken/transaction/value.{AssetName, PolicyId, add, from_asset, zero}
+use aiken/transaction/value.{add, from_asset, zero}
 use aiken_content_ownership/common.{compare_output_reference}
 use aiken_content_ownership/placeholder.{
   mock_content_registry_datum, mock_content_registry_output, mock_oracle_datum,
@@ -50,9 +50,9 @@ fn default_test_case() -> TestCase {
 fn make_mock_tx_body(
   record_count: Int,
   content_registry: List<ByteArray>,
-  ownership_registry: List<(PolicyId, AssetName)>,
+  ownership_registry: List<List<ByteArray>>,
   content_hash: ByteArray,
-  owner: (PolicyId, AssetName),
+  owner: List<ByteArray>,
   test_case: TestCase,
 ) -> Transaction {
   let TestCase {
@@ -197,8 +197,10 @@ fn make_mock_tx_body(
 }
 
 fn run_create_content_test(test_case: TestCase) -> Bool {
-  let content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCSUWk"
-  let owner = (mock_policy_id_4(), "my_token_name")
+  let content_hash =
+    #"5260e5bd0791d38438b891514d6158b5306884e9b7f4ef4b6433c6943285776c"
+  let owner =
+    [mock_policy_id_4(), "my_token_name"]
   let transaction = make_mock_tx_body(0, [], [], content_hash, owner, test_case)
   let content_dat = mock_content_registry_datum(0, [])
   let ownership_dat = mock_ownership_registry_datum(0, [])
@@ -282,7 +284,8 @@ fn create_preloaded_content_registry(
   curr: Int,
   size: Int,
 ) -> List<ByteArray> {
-  let content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCSUWk"
+  let content_hash =
+    #"5260e5bd0791d38438b891514d6158b5306884e9b7f4ef4b6433c6943285776c"
   let new_registry = list.concat(registry, [content_hash])
   if curr == size {
     new_registry
@@ -297,11 +300,12 @@ fn mock_content_registry_datum_at_scale(size: Int) -> ContentRegistryDatum {
 }
 
 fn create_preloaded_ownership_registry(
-  registry: List<(PolicyId, AssetName)>,
+  registry: List<List<ByteArray>>,
   curr: Int,
   size: Int,
-) -> List<(PolicyId, AssetName)> {
-  let owner = (mock_policy_id_4(), "my_token_name")
+) -> List<List<ByteArray>> {
+  let owner =
+    [mock_policy_id_4(), "my_token_name"]
   let new_registry = list.concat(registry, [owner])
   if curr == size {
     new_registry
@@ -316,8 +320,10 @@ fn mock_ownership_registry_datum_at_scale(size: Int) -> OwnershipRegistryDatum {
 }
 
 fn run_create_content_at_scale_test(test_case: TestCase) -> Bool {
-  let content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCSUWk"
-  let owner = (mock_policy_id_4(), "my_token_name")
+  let content_hash =
+    #"5260e5bd0791d38438b891514d6158b5306884e9b7f4ef4b6433c6943285776c"
+  let owner =
+    [mock_policy_id_4(), "my_token_name"]
   let content_registry = create_preloaded_content_registry([], 0, 50)
   let ownership_registry = create_preloaded_ownership_registry([], 0, 50)
   let transaction =

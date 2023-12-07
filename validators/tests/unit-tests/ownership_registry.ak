@@ -3,9 +3,7 @@ use aiken/list
 use aiken/transaction.{
   Input, Output, ScriptContext, Spend, Transaction, placeholder,
 }
-use aiken/transaction/value.{
-  AssetName, PolicyId, add, from_asset, negate, to_minted_value, zero,
-}
+use aiken/transaction/value.{add, from_asset, negate, to_minted_value, zero}
 use aiken_content_ownership/common.{compare_output_reference}
 use aiken_content_ownership/placeholder.{
   mock_content_registry_output, mock_oracle_datum, mock_oracle_output,
@@ -30,9 +28,9 @@ type CreateTestCase {
 fn make_mock_tx_body_for_create(
   record_count: Int,
   content_registry: List<ByteArray>,
-  ownership_registry: List<(PolicyId, AssetName)>,
+  ownership_registry: List<List<ByteArray>>,
   content_hash: ByteArray,
-  owner: (PolicyId, AssetName),
+  owner: List<ByteArray>,
   test_case: CreateTestCase,
 ) -> Transaction {
   let content_registry_value =
@@ -155,8 +153,10 @@ fn make_mock_tx_body_for_create(
 fn create_base_case(test_case: CreateTestCase) {
   let redeemer = CreateOwnershipRecord
   let dat = OwnershipRegistryDatum { count: 0, registry: [] }
-  let content_hash = "QmWBaeu6y1zEcKbsEqCuhuDHPL3W8pZouCPdafMCRCSUWk"
-  let owner = (mock_policy_id_4(), "my_token_name")
+  let content_hash =
+    #"5260e5bd0791d38438b891514d6158b5306884e9b7f4ef4b6433c6943285776c"
+  let owner =
+    [mock_policy_id_4(), "my_token_name"]
   let tx =
     make_mock_tx_body_for_create(0, [], [], content_hash, owner, test_case)
   let ctx = ScriptContext { purpose: Spend(mock_utxo_ref(2)), transaction: tx }
@@ -198,15 +198,15 @@ type UpdateTestCase {
 
 fn make_mock_tx_body_for_update(
   record_count: Int,
-  ownership_registry: List<(PolicyId, AssetName)>,
-  original_owner: (PolicyId, AssetName),
-  new_owner: (PolicyId, AssetName),
+  ownership_registry: List<List<ByteArray>>,
+  original_owner: List<ByteArray>,
+  new_owner: List<ByteArray>,
   test_case: UpdateTestCase,
 ) -> Transaction {
   let ownership_registry_value =
     from_asset(mock_policy_id_3(), get_registry_token_name(0), 1)
       |> add(#"", #"", 2_000_000)
-  let auth_token =
+  expect [auth_token_policy, auth_token_name] =
     if test_case.is_original_owner_authorized {
       original_owner
     } else {
@@ -216,7 +216,7 @@ fn make_mock_tx_body_for_update(
     Output {
       ..mock_output(),
       value: mock_output().value
-        |> add(auth_token.1st, auth_token.2nd, 1)
+        |> add(auth_token_policy, auth_token_name, 1)
         |> if test_case.is_registry_value_clean {
              add(_, #"", #"", 2_000_000)
            } else {
@@ -288,16 +288,18 @@ fn make_mock_tx_body_for_update(
 fn update_base_case(test_case: UpdateTestCase) {
   let current_registry =
     [
-      (mock_policy_id(), "my_token_name"),
-      (mock_policy_id(), "my_token_name"),
-      (mock_policy_id(), "my_token_name"),
-      (mock_policy_id(), "my_token_name"),
-      (mock_policy_id_4(), "my_token_name"),
-      (mock_policy_id(), "my_token_name"),
+      [mock_policy_id(), "my_token_name"],
+      [mock_policy_id(), "my_token_name"],
+      [mock_policy_id(), "my_token_name"],
+      [mock_policy_id(), "my_token_name"],
+      [mock_policy_id_4(), "my_token_name"],
+      [mock_policy_id(), "my_token_name"],
     ]
   let dat = OwnershipRegistryDatum { count: 0, registry: current_registry }
-  let original_owner = (mock_policy_id_4(), "my_token_name")
-  let new_owner = (mock_policy_id_5(), "my_another_token_name")
+  let original_owner =
+    [mock_policy_id_4(), "my_token_name"]
+  let new_owner =
+    [mock_policy_id_5(), "my_another_token_name"]
   let tx =
     make_mock_tx_body_for_update(
       4,

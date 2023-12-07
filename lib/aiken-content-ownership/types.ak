@@ -1,5 +1,5 @@
 use aiken/transaction/credential.{Address}
-use aiken/transaction/value.{AssetName, PolicyId}
+use aiken/transaction/value.{PolicyId}
 
 pub type MintPolarity {
   RMint
@@ -32,21 +32,18 @@ pub type ContentRegistryDatum {
 }
 
 pub type ContentRegistryRedeemer {
-  CreateContent { content_hash: ByteArray, owner: (PolicyId, AssetName) }
+  CreateContent { content_hash: ByteArray, owner: List<ByteArray> }
   UpdateContent { new_content_hash: ByteArray, content_number: Int }
   StopContentRegistry
 }
 
 pub type OwnershipRegistryDatum {
   count: Int,
-  registry: List<(PolicyId, AssetName)>,
+  registry: List<List<ByteArray>>,
 }
 
 pub type OwnershipRegistryRedeemer {
   CreateOwnershipRecord
-  TransferOwnership {
-    new_owner_token: (PolicyId, AssetName),
-    content_number: Int,
-  }
+  TransferOwnership { new_owner_token: List<ByteArray>, content_number: Int }
   StopOwnershipRegistry
 }

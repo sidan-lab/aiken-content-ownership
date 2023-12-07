@@ -181,7 +181,7 @@ pub fn mock_content_registry_output(
 
 pub fn mock_ownership_registry_datum(
   count: Int,
-  registry: List<(ByteArray, ByteArray)>,
+  registry: List<List<ByteArray>>,
 ) -> OwnershipRegistryDatum {
   OwnershipRegistryDatum { count, registry }
 }

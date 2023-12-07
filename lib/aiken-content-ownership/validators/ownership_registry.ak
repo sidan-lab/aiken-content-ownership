@@ -4,7 +4,7 @@ use aiken/transaction.{
   InlineDatum, ScriptContext, ScriptPurpose, Spend, Transaction,
 }
 use aiken/transaction/value.{
-  AssetName, PolicyId, flatten, from_minted_value, negate, without_lovelace,
+  PolicyId, flatten, from_minted_value, negate, without_lovelace,
 }
 use aiken_content_ownership/common.{
   inputs_at, inputs_at_with_policy, inputs_token_quantity, inputs_with,
@@ -17,10 +17,10 @@ use aiken_content_ownership/types.{
 }
 
 pub fn update_ownership_registry_at(
-  registry: List<(PolicyId, AssetName)>,
+  registry: List<List<ByteArray>>,
   index: Int,
-  new_value: (PolicyId, AssetName),
-) -> List<(PolicyId, AssetName)> {
+  new_value: List<ByteArray>,
+) -> List<List<ByteArray>> {
   let spanned_registry = list.span(registry, index)
   expect Some(dropped_head_tail) = list.tail(spanned_registry.2nd)
   let updated_tail = list.push(dropped_head_tail, new_value)
