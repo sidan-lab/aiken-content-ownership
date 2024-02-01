@@ -17,3 +17,13 @@ This documentation would outline a more detailed transaction specification on us
     Spend(content_registry_input_utxo): CreateContent { content_hash: ByteArray, owner: (PolicyId, AssetName) }
    }
    ```
+
+2. Update Content:
+
+   - Validation: 4.2
+   - Transaction body (reference to frontend demo repo)
+
+3. Transfer Content:
+
+   - Validation: 6.2
+   - Transaction body (reference to frontend demo repo)
